@@ -61,8 +61,7 @@ RUN apt-get update \
         xfce4-terminal \
         zlib1g-dev \
     && apt-get autoremove -y \
-    && apt-get clean \
-    && mkdir -p $DATA_DIR
+    && apt-get clean 
 
 RUN echo LANG="en_US.UTF-8" > /etc/default/locale
 ENV LANG C.UTF-8
@@ -73,7 +72,8 @@ RUN mkdir -p /code/grass
 
 # add GRASS source repository files to the image
 RUN wget -nv --no-check-certificate https://grass.osgeo.org/grass76/source/grass-7.6.0.tar.gz \
-	  && tar xzf grass-7.6.0.tar.gz -C /code/grass --strip-components=1
+	  && tar xzf grass-7.6.0.tar.gz -C /code/grass --strip-components=1 \
+	  && rm -rf grass-7.6.0.tar
 
 WORKDIR /code/grass
 
@@ -106,7 +106,7 @@ RUN cd /code/grass && ./configure \
     --with-opengl-libs=/usr/include/GL \
     --with-openmp \
     --enable-64bit \
-    && make -j 1 && make install && ldconfig
+    && make -j 4 && make install && ldconfig
    
 # enable simple grass command regardless of version number
 RUN ln -s /usr/local/bin/grass* /usr/local/bin/grass
@@ -118,25 +118,12 @@ RUN apt-get clean -y
 # set SHELL var to avoid /bin/sh fallback in interactive GRASS GIS sessions in docker
 ENV SHELL /bin/bash
 
-# Fix permissions
-RUN chmod -R a+rwx $DATA_DIR
-
-# declare data volume late so permissions apply
-VOLUME $DATA_DIR
-WORKDIR $DATA_DIR
-
 # Reduce the docker image size 
 RUN rm -rf /code/grass
 
 # once everything is built, install a couple of GRASS extensions
 RUN grass -text -c epsg:3857 ${PWD}/mytmp_wgs84 -e && \
     echo "g.extension -s extension=r.sun.mp ; g.extension -s extension=r.sun.hourly ; g.extension -s extension=r.sun.daily" | grass -text ${PWD}/mytmp_wgs84/PERMANENT
-
-# Install SAGA-GIS binary
-#RUN apt-get install -y software-properties-common && \
-#    add-apt-repository ppa:ubuntugis/ubuntugis-unstable && \
-#    apt-get -y update && \
-#    apt-get install -y saga
 
 # Compile SAGA-GIS 7.2.0 
 RUN apt-get install -y gtk2-engines-pixbuf
@@ -147,14 +134,14 @@ RUN apt-get install -y libwxgtk3.0-dev libtiff5-dev libgdal-dev libproj-dev \
     libexpat-dev wx-common libogdi3.2-dev unixodbc-dev
 RUN cd /code/saga-gis \
         && ./configure \
-        && make -j 12 \
+        && make -j 4 \
         && make install
 
 # Install QGIS Latest LTR Desktop binary
 RUN apt-get -y update && apt-get -f install \
     && echo "deb https://qgis.org/ubuntu bionic main" >> /etc/apt/sources.list \
     && echo "deb-src https://qgis.org/ubuntu bionic main" >> /etc/apt/sources.list \
-    && apt-key adv --keyserver keyserver.ubuntu.com --recv-key CAEB3DC3BDF7FB45 
+    && apt-key adv --keyserver keyserver.ubuntu.com --recv-key 51F523511C7028C3
 
 # Install QGIS now
 RUN apt-get -y update \
@@ -169,5 +156,5 @@ RUN apt-get -y update \
 
 USER user
 
-CMD xpra start --bind-tcp=0.0.0.0:9876 --html=on --start-child=qgis --exit-with-children --daemon=no --xvfb="/usr/bin/Xvfb +extension Composite -screen 0 1920x1080x24+32 -nolisten tcp -noreset" --pulseaudio=no --notifications=no --bell=no :100
+CMD xpra start --bind-tcp=0.0.0.0:9876 --html=on --start-child=qgis --exit-with-children=no --daemon=no --xvfb="/usr/bin/Xvfb +extension Composite -screen 0 1920x1080x24+32 -nolisten tcp -noreset" --pulseaudio=no --notifications=no --bell=no :100
 
