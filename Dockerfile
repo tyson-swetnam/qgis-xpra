@@ -68,14 +68,13 @@ ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
 # Download the GRASS Github Repo
-RUN mkdir -p /code/grass
+RUN mkdir -p /code/grass && cd /code/grass
 
 # add GRASS source repository files to the image
 RUN wget -nv --no-check-certificate https://grass.osgeo.org/grass76/source/grass-7.6.0.tar.gz \
 	  && tar xzf grass-7.6.0.tar.gz -C /code/grass --strip-components=1 \
-	  && rm -rf grass-7.6.0.tar
+	  && rm -rf /code/grass/grass-7.6.0.tar
 
-WORKDIR /code/grass
 
 # Set gcc/g++ environmental variables for GRASS GIS compilation, without debug symbols
 ENV MYCFLAGS "-O2 -std=gnu99 -m64"
@@ -153,6 +152,8 @@ RUN apt-get -y update \
         qgis \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /home/user/
 
 USER user
 
