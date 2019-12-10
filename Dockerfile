@@ -82,7 +82,7 @@ ENV LC_ALL C.UTF-8
 RUN mkdir -p /code/grass \
     && wget -nv --no-check-certificate https://grass.osgeo.org/grass76/source/grass-7.6.0.tar.gz \
     && tar xzf grass-7.6.0.tar.gz -C /code/grass --strip-components=1 \
-    && rm -rf grass-7.6.0.tar \
+    && rm -rf /home/user/grass-7.6.0.tar \
     && cd /code/grass && ./configure \
        --enable-largefile \
        --with-cxx \
