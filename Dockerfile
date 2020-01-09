@@ -43,6 +43,7 @@ RUN apt-get update \
         gdal-bin \
         git \
 	gtk2-engines-pixbuf \
+	htop \
         make \
         ncurses-bin \
         netcdf-bin \
@@ -144,6 +145,8 @@ RUN apt-get -y update \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /home/user/
+
+RUN chown -R user:user /home/user/*
 
 USER user
 
