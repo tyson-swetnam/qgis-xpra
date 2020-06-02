@@ -11,5 +11,5 @@ docker run -it -p 9876:9876 tswetnam/qgis-xpra:bionic
 #### Run with NVIDIA GPU 
 
 ```
-docker run -it --gpus all -p 9876:9876 -v /tmp/.X11-unix:/tmp/.X11-unix -e DPLAY -e XAUTHORITY -e NVIDIA_DRIVER_CAPABILITIES=all tswetnam/qgis-xpra:bionic
+docker run -it --gpus all -p 9876:9876 -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY -e XAUTHORITY -e NVIDIA_DRIVER_CAPABILITIES=all tswetnam/qgis-xpra:bionic
 ```
