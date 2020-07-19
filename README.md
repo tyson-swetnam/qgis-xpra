@@ -27,6 +27,12 @@ Pull the container from [Singularity Library](https://cloud.sylabs.io/library)
 singularity pull library://tyson-swetnam/default/qgis-xpra-bionic:latest
 ```
 
+Run the Singualarity container on GPU with its own XPRA Desktop running on port `:9876`
+
+```
+singularity run --nv qgis-xpra-bionic.sif
+```
+
 Run the Singularity container with NVIDIA locally
 
 ```
