@@ -27,12 +27,15 @@ Pull the container from [Singularity Library](https://cloud.sylabs.io/library)
 singularity pull library://tyson-swetnam/default/qgis-xpra-bionic:latest
 ```
 
-Run the Singularity container locally
+Run the Singularity container with NVIDIA locally
+
+```
+singularity run --nv qgis-xpra-bionic.sif qgis
+```
+
+
+Run the Singularity container locally w/o GPU
 
 ```
 singularity run qgis-xpra-bionic.sif qgis
-```
-
-```
-singularity run qgis-xpra-bionic.sif saga_gui
 ```
