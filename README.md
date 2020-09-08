@@ -2,13 +2,13 @@
 
 Ubuntu container with Xpra for running remote desktop applications in browser.
 
-Image is built from NVIDIA Docker image and is compatible with GPUs - need to install additional software.
-
 ```
 docker run -it -p 9876:9876 tswetnam/xpra-qgis:bionic
 ```
 
 #### Run with NVIDIA GPU 
+
+Image is built from NVIDIA CUDA GL Docker image and is compatible with NVIDIA GPUs - need to install additional software.
 
 ```
 docker run -it --gpus all -p 9876:9876 -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY -e XAUTHORITY -e NVIDIA_DRIVER_CAPABILITIES=all tswetnam/xpra-qgis:cudagl-18.04
