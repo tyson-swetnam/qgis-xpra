@@ -74,7 +74,7 @@ This is a small guide to have NVIDIA accelerated OpenGL support for nvidia-docke
 
 ### Create xorg.conf with the correct BusID fromt he previus command
 
-````sudo nvidia-xconfig --enable-all-gpus --use-display-device=none -o /etc/X11/xorg.conf --busid=PCI:X:Y:Z```
+```sudo nvidia-xconfig --enable-all-gpus --use-display-device=none -o /etc/X11/xorg.conf --busid=PCI:X:Y:Z```
 
 ### Edit /etc/X11/xorg.conf and add the following at the top
 
