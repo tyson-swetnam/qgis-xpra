@@ -1,4 +1,4 @@
-FROM tswetnam/xpra:cudagl-18.04
+FROM tswetnam/xpra:cudagl-20.04
 
 USER root
 
@@ -23,7 +23,7 @@ RUN apt-get update \
         liblapack-dev \
         libncurses5-dev \
         libnetcdf-dev \
-	libogdi3.2-dev \
+	libogdi-dev \
         libopenblas-base \
         libopenblas-dev \
         libopenjp2-7 \
@@ -39,7 +39,7 @@ RUN apt-get update \
         libsqlite3-dev \
         libtiff-dev \
 	libtiff5-dev \
-        libwxgtk3.0-dev \
+#       libgtk3.0-dev \
 	libxmu-dev \	
         libzstd-dev \
         bison \
@@ -83,6 +83,9 @@ ENV LD_LIBRARY_PATH "/usr/local/lib"
 ENV LDFLAGS "$MYLDFLAGS"
 ENV CFLAGS "$MYCFLAGS"
 ENV CXXFLAGS "$MYCXXFLAGS"
+
+RUN apt-get clean && apt-get update && apt-get install -y locales
+RUN locale-gen en_US.UTF-8
 
 RUN echo LANG="en_US.UTF-8" > /etc/default/locale
 RUN echo en_US.UTF-8 UTF-8 >> /etc/locale.gen && locale-gen
@@ -153,31 +156,21 @@ ENV LD_LIBRARY_PATH "$LD_LIBRARY_PATH:$GISBASE/lib"
 
 ENV TZ America/Phoenix
 
-RUN mkdir /code/saga-gis \
-    && wget -nv --no-check-certificate https://sourceforge.net/projects/saga-gis/files/SAGA%20-%207/SAGA%20-%207.8.0/saga-7.8.0.tar.gz \
-    && tar xzf saga-7.8.0.tar.gz -C /code/saga-gis --strip-components=1 \
-    && rm saga-7.8.0.tar.gz \
-    && cd /code/saga-gis \
-    && ./configure \
-    && make \
-    && make install
+RUN apt install -y saga
 
-# Install QGIS Latest LTR Desktop binary
+# Install QGIS Desktop binary
 
 RUN wget -qO - https://qgis.org/downloads/qgis-2020.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/qgis-archive.gpg --import && \
     chmod a+r /etc/apt/trusted.gpg.d/qgis-archive.gpg
 
 RUN apt -y update && apt -f install && \
-    echo "deb https://qgis.org/ubuntu bionic main" >> /etc/apt/sources.list && \
-    echo "deb-src https://qgis.org/ubuntu bionic main" >> /etc/apt/sources.list 
+    echo "deb [ arch=amd64 ] https://qgis.org/ubuntu focal main" >> /etc/apt/sources.list && \
+    echo "deb-src [ arch=amd64 ] https://qgis.org/ubuntu focal main" >> /etc/apt/sources.list 
 
 # Install QGIS now
 RUN apt -y update \
-    && apt-get install -y \
-        python-qgis-common \
-        python-qgis \
+    && apt install -y \
         qgis-plugin-grass \
-        qgis-providers \
         qgis 
 
 #This avahi throws an error but is resolved with --bind-tcp=0.0.0.0:port in the xpra run
@@ -188,20 +181,22 @@ RUN apt-get autoremove -y
 RUN apt-get clean -y
 RUN rm -rf /var/lib/apt/lists/*
 
-RUN chmod u+s /usr/lib/libdlfaker.so
+#RUN chmod u+s /usr/lib/libdlfaker.so
 
-RUN apt -y update && \
-    apt-get install -y glmark2 glances 
- 
+# grant access to /usr/share/qgis to user
+RUN chown -R user:user /usr/share/qgis
+
+# set XDG_RUNTIME_DIR for qgis
+RUN mkdir /tmp/runtime-user && chown -R user:user /tmp/runtime-user
+ENV XDG_RUNTIME_USER /tmp/runtime-user
+
 # change to QGIS user profile to remove any root access
 WORKDIR /home/user/
 
 # set display port #
-ENV DISPLAY :10
+ENV DISPLAY :100
 
 USER user
-
-ENV PATH=$PATH:/opt/VirtualGL/bin
 
 CMD xpra start \
          --bind-tcp=0.0.0.0:9876 \
@@ -213,4 +208,4 @@ CMD xpra start \
          --pulseaudio=no \
          --notifications=no \
          --bell=no \
-         :10
+         :100
