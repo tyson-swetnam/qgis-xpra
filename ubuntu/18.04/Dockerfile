@@ -1,4 +1,4 @@
-FROM tswetnam/xpra:20.04
+FROM tswetnam/xpra:18.04
 
 USER root
 
@@ -84,6 +84,8 @@ ENV LDFLAGS "$MYLDFLAGS"
 ENV CFLAGS "$MYCFLAGS"
 ENV CXXFLAGS "$MYCXXFLAGS"
 
+# Set the locale
+RUN apt-get clean && apt-get update && apt-get install -y locales
 RUN echo LANG="en_US.UTF-8" > /etc/default/locale
 RUN echo en_US.UTF-8 UTF-8 >> /etc/locale.gen && locale-gen
 
