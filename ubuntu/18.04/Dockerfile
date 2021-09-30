@@ -1,4 +1,4 @@
-FROM tswetnam/xpra:18.04
+FROM harbor.cyverse.org/vice/xpra/desktop:18.04
 
 USER root
 
