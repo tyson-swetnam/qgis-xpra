@@ -1,4 +1,4 @@
-FROM tswetnam/xpra:cudagl-20.04
+FROM harbor.cyverse.org/vice/xpra/cudagl:20.04
 
 # Build-time metadata as defined at http://label-schema.org
 ARG BUILD_DATE
