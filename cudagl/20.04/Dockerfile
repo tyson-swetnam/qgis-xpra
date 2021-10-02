@@ -130,17 +130,20 @@ RUN apt install -y saga
 
 # Install QGIS Desktop binary
 
-RUN wget -qO - https://qgis.org/downloads/qgis-2020.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/qgis-archive.gpg --import && \
-        chmod a+r /etc/apt/trusted.gpg.d/qgis-archive.gpg
+RUN wget -qO - https://qgis.org/downloads/qgis-2021.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/qgis-archive.gpg --import && \
+    chmod a+r /etc/apt/trusted.gpg.d/qgis-archive.gpg
 
 RUN apt -y update && apt -f install && \
-        echo "deb [ arch=amd64 ] https://qgis.org/ubuntu focal main" >> /etc/apt/sources.list && \
-        echo "deb-src [ arch=amd64 ] https://qgis.org/ubuntu focal main" >> /etc/apt/sources.list 
+    echo "deb [ arch=amd64 ] https://qgis.org/ubuntu focal main" >> /etc/apt/sources.list && \
+    echo "deb-src [ arch=amd64 ] https://qgis.org/ubuntu focal main" >> /etc/apt/sources.list 
 
 # Install QGIS now
 RUN apt -y update \
-        && apt install -y \
+    && apt-get install -y \
+        libqt5x11extras5 \
+        python3-pyqt5 \
         qgis-plugin-grass \
+        qgis-providers \
         qgis 
 
 # Reduce the image size
@@ -163,7 +166,6 @@ RUN mkdir -p /opt/grass78 \
     && tar xzf grass-7.8.5.tar.gz -C /opt/grass78 --strip-components=1 \
     && rm -rf grass-7.8.5.tar.gz \
     && cd /opt/grass78 && ./configure \
-       
        --enable-largefile \
        --with-bzlib \
        --with-cairo --with-cairo-ldflags=-lfontconfig \
