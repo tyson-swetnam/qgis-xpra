@@ -5,7 +5,7 @@ ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
 LABEL org.label-schema.build-date=$BUILD_DATE \
-        org.label-schema.name="CyVerse XPRA Desktop GIS" \
+        org.label-schema.name="CyVerse XPRA GIS" \
         org.label-schema.description="XPRA Remote Desktop with QGIS, GRASS, SAGA-GIS, additional depends for CyVerse K8s workbench" \
         org.label-schema.url="https://cyverse.org" \
         org.label-schema.vcs-ref=$VCS_REF \
@@ -18,13 +18,18 @@ USER root
 
 # GDAL, GEOS, GRASS, QGIS, SAGA-GIS dependencies
 RUN apt-get update \
-    && apt-get install -y build-essential software-properties-common \
-    && apt-get install -y --no-install-recommends --no-install-suggests \
+        && apt-get install -y --no-install-recommends --no-install-suggests \
+        libavcodec-dev \
+        libavformat-dev \
+        libavutil-dev \
         libblas-dev \
+        libboost-thread-dev \
+        libboost-program-options-dev \
         libbz2-dev \
-	libcairo2-dev \
+        libcairo2 libcairo2-dev \
         libcurl4-gnutls-dev \
-	libexpat-dev \
+        libexpat-dev \
+        libffmpegthumbnailer-dev \
         libfftw3-bin \        
         libfftw3-dev \
         libfreetype6-dev \
@@ -37,7 +42,7 @@ RUN apt-get update \
         liblapack-dev \
         libncurses5-dev \
         libnetcdf-dev \
-	libogdi-dev \
+        libogdi-dev \
         libopenblas-base \
         libopenblas-dev \
         libopenjp2-7 \
@@ -49,49 +54,63 @@ RUN apt-get update \
         libpq-dev \
         libproj-dev \
         libpython3-all-dev \
-        libreadline-dev \
+        libreadline6-dev \
         libsqlite3-dev \
+        libswscale-dev \
         libtiff-dev \
-	libtiff5-dev \
-#       libgtk3.0-dev \
-	libxmu-dev \	
+        libtiff5-dev \
+        libxmu-dev \
+        libwxbase3.0-dev \
+        libwxgtk3.0-gtk3-dev \	
         libzstd-dev \
         bison \
-        bzip2 \  
+        bzip2 \
+        ccache \  
+        checkinstall \
         flex \
+        ffmpeg2theora \
         g++ \
         gettext \
         gdal-bin \
+        ghostscript \
         git \
-	gtk2-engines-pixbuf \
-	htop \
+        gtk2-engines-pixbuf \
         make \
         ncurses-bin \
         netcdf-bin \
         proj-bin \
         proj-data \
         python3 \
-        python3-dateutil \
         python3-dev \
+        python3-dateutil \
+        python3-gdal \
+        python3-pyinotify \ 
+        python3-opengl \
         python3-magic \
+        python3-matplotlib \
         python3-numpy \
+        python3-pandas \
         python3-pil \
-        python3-pip \
+        python3-pillow \
+        #python3-psycopg2 \
+        #python3-pyopengl \
         python3-ply \
         python3-setuptools \
-        python3-venv \
+        python3-six \
+        python3-wxgtk4.0 \
+        python3-wxgtk-webview4.0 \
+        python3-wxgtk-media4.0 \
         sqlite3 \
         subversion \
-        sudo \
-	unixodbc-dev \
+        unixodbc-dev \
         wget \
-	wx-common \
-        xfce4-terminal \
+        wx3.0-headers \
+        wx-common \
         zlib1g-dev 
 
-# Set gcc/g++ environmental variables for GRASS GIS compilation, without debug symbols
-ENV MYCFLAGS "-O2 -std=gnu99 -m64"
-ENV MYLDFLAGS "-s"
+## Set gcc/g++ environmental variables for GRASS GIS compilation, without debug symbols
+ENV MYCFLAGS "-O2 -fPIC -fno-common -fexceptions -std=gnu99 -fstack-protector -m64"
+ENV MYLDFLAGS "-Wl,--no-undefined -Wl,-z,now"
 # CXX stuff:
 ENV LD_LIBRARY_PATH "/usr/local/lib"
 ENV LDFLAGS "$MYLDFLAGS"
@@ -104,99 +123,92 @@ RUN locale-gen en_US.UTF-8
 RUN echo LANG="en_US.UTF-8" > /etc/default/locale
 RUN echo en_US.UTF-8 UTF-8 >> /etc/locale.gen && locale-gen
 
-# Configure and install GRASS
-ENV GRASS_PYTHON=/usr/bin/python3
+ENV TZ America/Phoenix
 
-# add GRASS source repository files to the image
-RUN mkdir -p /code/grass \
-    && wget -nv --no-check-certificate https://grass.osgeo.org/grass78/source/grass-7.8.3.tar.gz \
-    && tar xzf grass-7.8.3.tar.gz -C /code/grass --strip-components=1 \
-    && rm -rf grass-7.8.3.tar.gz \
-    && cd /code/grass && ./configure \
-       --enable-largefile \
-       --with-cxx \
-       --with-nls \
-       --with-readline \
-       --with-sqlite \
-       --with-bzlib \
-       --with-zstd \
-       --with-cairo --with-cairo-ldflags=-lfontconfig \
-       --with-freetype --with-freetype-includes="/usr/include/freetype2/" \
-       --with-fftw \
-       --with-netcdf \
-       --with-pdal \
-       --with-proj --with-proj-share=/usr/share/proj \
-       --with-geos=/usr/bin/geos-config \
-       --with-postgres --with-postgres-includes="/usr/include/postgresql" \
-       --with-opengl-libs=/usr/include/GL \
-       --with-openmp \
-       --enable-64bit \
-    && make \
-    && make install \
-    && ldconfig
-   
-# Unset environmental variables to avoid later compilation issues
-ENV INTEL ""
-ENV MYCFLAGS ""
-ENV MYLDFLAGS ""
-ENV MYCXXFLAGS ""
-ENV LD_LIBRARY_PATH ""
-ENV LDFLAGS ""
-ENV CFLAGS ""
-ENV CXXFLAGS ""
+# Install SAGA-GIS
+RUN apt install -y saga
+
+# Install QGIS Desktop binary
+
+RUN wget -qO - https://qgis.org/downloads/qgis-2021.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/qgis-archive.gpg --import && \
+        chmod a+r /etc/apt/trusted.gpg.d/qgis-archive.gpg
+
+RUN apt -y update && apt -f install && \
+        echo "deb [ arch=amd64 ] https://qgis.org/ubuntu focal main" >> /etc/apt/sources.list && \
+        echo "deb-src [ arch=amd64 ] https://qgis.org/ubuntu focal main" >> /etc/apt/sources.list 
+
+# Install QGIS now
+RUN apt -y update \
+        && apt install -y \
+        qgis-plugin-grass \
+        qgis 
+
+# Reduce the image size
+RUN apt-get autoremove -y
+RUN apt-get clean -y
+RUN rm -rf /var/lib/apt/lists/*
+
+RUN echo LANG="en_US.UTF-8" > /etc/default/locale
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
 
 # set SHELL var to avoid /bin/sh fallback in interactive GRASS GIS sessions
 ENV SHELL /bin/bash
 ENV LC_ALL "en_US.UTF-8"
 ENV GRASS_SKIP_MAPSET_OWNER_CHECK 1
 
-# enable simple grass command regardless of version number
-RUN ln -s /usr/local/bin/grass* /usr/local/bin/grass
+# add GRASS source repository files to the image https://grasswiki.osgeo.org/wiki/Compile_and_Install_Ubuntu
+RUN mkdir -p /opt/grass78 \
+        && wget -nv --no-check-certificate https://grass.osgeo.org/grass78/source/grass-7.8.5.tar.gz \
+        && tar xzf grass-7.8.5.tar.gz -C /opt/grass78 --strip-components=1 \
+        && rm -rf grass-7.8.5.tar.gz \
+        && cd /opt/grass78 && ./configure \
+        --enable-largefile \
+        --with-bzlib \
+        --with-cairo --with-cairo-ldflags=-lfontconfig \
+        --with-cxx \
+        --with-ffmpeg \
+        --with-fftw \
+        --with-freetype --with-freetype-includes="/usr/include/freetype2/" \
+        --with-gdal=/usr/bin/gdal-config \
+        --with-geos=/usr/bin/geos-config \
+        #--with-liblas \
+        --with-motif \
+        --with-netcdf \
+        --with-nls \
+        --with-opengl-libs=/usr/include/GL \
+        --with-openmp \
+        --with-pdal \
+        --with-postgres --with-postgres-includes="/usr/include/postgresql" \
+        --with-readline \
+        --with-proj --with-proj-share=/usr/share/proj \
+        --with-sqlite \ 
+        --with-zstd \
+        --with-wxwidgets \
+        --enable-64bit \
+        && make -j8 \
+        && make -j8 install \
+        && ldconfig
 
-# install external GRASS GIS session Python API
-RUN pip3 install grass-session
-
-# add GRASS GIS envs for python usage
-ENV GISBASE "/usr/local/grass/"
-ENV GRASSBIN "/usr/local/bin/grass"
+# Configure and install GRASS GIS
+ENV GRASS_PYTHON=/usr/bin/python3
+ENV GISBASE "/usr/lib/grass78"
+ENV GRASSBIN "/usr/local/bin/grass78"
 ENV PYTHONPATH "${PYTHONPATH}:$GISBASE/etc/python/"
 ENV LD_LIBRARY_PATH "$LD_LIBRARY_PATH:$GISBASE/lib"
+ENV GIS_LOCK=$$
+ENV GISRC="/home/user/.grass78/rc"
 
-# once everything is built, install a couple of GRASS extensions
-#RUN grass -text -c epsg:3857 ${PWD}/mytmp_wgs84 -e && \
-#    echo "g.extension -s extension=r.sun.mp ; g.extension -s extension=r.sun.hourly ; g.extension -s extension=r.sun.daily" | grass -text ${PWD}/mytmp_wgs84/PERMANENT
+# Unset environmental variables to avoid later compilation issues
+ENV INTEL ""
+ENV MYCFLAGS ""
+ENV MYLDFLAGS ""
+ENV MYCXXFLAGS ""
+ENV LDFLAGS ""
+ENV CFLAGS ""
+ENV CXXFLAGS ""
 
-# Compile SAGA-GIS 2.3.1  -- ltr version that works inside QGIS
-
-ENV TZ America/Phoenix
-
-RUN apt install -y saga
-
-# Install QGIS Desktop binary
-
-RUN wget -qO - https://qgis.org/downloads/qgis-2021.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/qgis-archive.gpg --import && \
-    chmod a+r /etc/apt/trusted.gpg.d/qgis-archive.gpg
-
-RUN apt -y update && apt -f install && \
-    echo "deb [ arch=amd64 ] https://qgis.org/ubuntu focal main" >> /etc/apt/sources.list && \
-    echo "deb-src [ arch=amd64 ] https://qgis.org/ubuntu focal main" >> /etc/apt/sources.list 
-
-# Install QGIS now
-RUN apt -y update \
-    && apt-get install -y \
-        libqt5x11extras5 \
-        python3-pyqt5 \
-        qgis-plugin-grass \
-        qgis-providers \
-        qgis 
-
-#This avahi throws an error but is resolved with --bind-tcp=0.0.0.0:port in the xpra run
-RUN apt-get install -y python3-pyinotify 
-
-# Reduce the image size
-RUN apt-get autoremove -y
-RUN apt-get clean -y
-RUN rm -rf /var/lib/apt/lists/*
+#RUN chmod u+s /usr/lib/libdlfaker.so
 
 # Install GRASS-GIS GUI 
 RUN apt-get update && apt-get install -y grass

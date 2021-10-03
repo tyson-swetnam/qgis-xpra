@@ -209,7 +209,7 @@ RUN mkdir /tmp/runtime-user && chown -R user:user /tmp/runtime-user
 ENV XDG_RUNTIME_USER /tmp/runtime-user
 
 # enable simple grass command regardless of version number
-RUN ln -s /usr/local/bin/grass* /usr/local/bin/grass
+#RUN ln -s /usr/local/bin/grass* /usr/local/bin/grass
 
 # change to QGIS user profile to remove any root access
 WORKDIR /home/user/

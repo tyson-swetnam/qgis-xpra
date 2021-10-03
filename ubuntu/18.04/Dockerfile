@@ -256,3 +256,4 @@ CMD xpra start \
         --notifications=no \
         --bell=no \
         :100
+
