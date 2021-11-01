@@ -3,7 +3,7 @@
 Ubuntu container with Xpra for running remote desktop applications in browser.
 
 ```
-docker run -it -p 9876:9876 tswetnam/xpra-qgis:bionic
+docker run -it -p 9876:9876 harbor.cyverse.org/vice/xpra/desktop:geospatial-20.04
 ```
 
 #### Run with NVIDIA GPU 
@@ -11,39 +11,39 @@ docker run -it -p 9876:9876 tswetnam/xpra-qgis:bionic
 Image is built from NVIDIA CUDA GL Docker image and is compatible with NVIDIA GPUs - need to install additional software.
 
 ```
-docker run -it --gpus all -p 9876:9876 -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY -e XAUTHORITY -e NVIDIA_DRIVER_CAPABILITIES=all tswetnam/xpra-qgis:cudagl-18.04
+docker run -it --gpus all -p 9876:9876 -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY -e XAUTHORITY -e NVIDIA_DRIVER_CAPABILITIES=all harbor.cyverse.org/vice/xpra/cudagl:geospatial-20.04
 ```
 #### Run with Singularity
 
 Build the container from a Docker image
 
 ```
-singularity build qgis-xpra-bionic.sif docker://tswetnam/xpra-qgis:cudagl-18.04
+singularity build qgis-xpra-focal.sif docker://harbor.cyverse.org/vice/xpra/cudagl:geospatial-20.04
 ```
 
 Pull the container from [Singularity Library](https://cloud.sylabs.io/library)
 
 ```
-singularity pull library://tyson-swetnam/default/qgis-xpra-bionic:latest
+singularity pull library://tyson-swetnam/default/qgis-xpra-focal:latest
 ```
 
 Run the Singualarity container on GPU with its own XPRA Desktop running on port `:9876`
 
 ```
-singularity run --nv qgis-xpra-bionic.sif
+singularity run --nv qgis-xpra-focal.sif
 ```
 
 Run the Singularity container with NVIDIA locally
 
 ```
-singularity run --nv qgis-xpra-bionic.sif qgis
+singularity run --nv qgis-xpra-focal.sif qgis
 ```
 
 
 Run the Singularity container locally w/o GPU
 
 ```
-singularity run qgis-xpra-bionic.sif qgis
+singularity run qgis-xpra-focal.sif qgis
 ```
 
 # Setting up headless NVIDIA GPU Rendering
