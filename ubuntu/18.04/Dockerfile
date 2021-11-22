@@ -190,24 +190,70 @@ RUN apt-get autoremove -y
 RUN apt-get clean -y
 RUN rm -rf /var/lib/apt/lists/*
 
-#RUN chmod u+s /usr/lib/libdlfaker.so
+# Install GRASS-GIS GUI 
+RUN apt-get update && apt-get install -y grass
+
+# grant access to /usr/share/qgis to user
+RUN chown -R user:user /usr/share/qgis
+
+# set XDG_RUNTIME_DIR for qgis
+RUN mkdir /tmp/runtime-user && chown -R user:user /tmp/runtime-user
+ENV XDG_RUNTIME_USER /tmp/runtime-user
+
+# enable simple grass command regardless of version number
+RUN ln -s /usr/local/bin/grass* /usr/local/bin/grass
 
 # change to QGIS user profile to remove any root access
 WORKDIR /home/user/
 
-# set display port #
-ENV DISPLAY :100
+# set SHELL var to avoid /bin/sh fallback in interactive GRASS GIS sessions in docker
+ENV SHELL /bin/bash
 
 USER user
 
+ENV PATH=$PATH:$GISBASE/bin:$GISBASE/scripts
+ENV GISRC=/home/user/.grassrc7
+
+# install external GRASS GIS session Python API
+RUN pip3 install grass-session
+
+# path to GRASS settings file
+ENV GISRC=/tmp/grass7-${USER}-$GIS_LOCK/gisrc
+# remove any leftover files/folder
+RUN rm -fr /tmp/grass7-${USER}-$GIS_LOCK
+RUN mkdir /tmp/grass7-${USER}-$GIS_LOCK
+ENV TMPDIR="/tmp/grass7-${USER}-$GIS_LOCK"
+
+# set GISDBASE, LOCATION_NAME, and/or MAPSET
+
+RUN mkdir /home/user/grassdata
+RUN echo "GISDBASE: /home/user/" >>$GISRC
+RUN echo "LOCATION_NAME: grassdata" >>$GISRC
+RUN echo "MAPSET: PERMANENT" >>$GISRC
+# start in text mode
+RUN echo "GRASS_GUI: text" >>$GISRC
+
+# once everything is built, install a couple of GRASS extensions
+RUN grass78 -text -c EPSG:3857 /home/user/grassdata/PERMANENT
+#RUN echo "g.extension -s extension=r.sun.mp ; g.extension -s extension=r.sun.hourly ; g.extension -s extension=r.sun.daily" | grass78 -text /home/user/grassdata/PERMANENT
+
+# Removing Conda from PATH to fix Python SIP error with QGIS
+ENV PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/VirtualGL/bin/:/usr/local/go/bin:/usr/lib/grass78/bin:/usr/lib/grass78/scripts
+
+# VICE permissions error fix
+RUN sudo strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
+
+VOLUME /tmp/.X11-unix
+
 CMD xpra start \
-         --bind-tcp=0.0.0.0:9876 \
-         --start-child=qgis \
-         --exit-with-children=no \
-         --html=on \
-         --daemon=no \
-         --xvfb="/usr/bin/Xvfb +extension Composite -screen 0 1920x1080x24+32 -nolisten tcp -noreset" \
-         --pulseaudio=no \
-         --notifications=no \
-         --bell=no \
-         :100
+        --bind-tcp=0.0.0.0:9876 \
+        --start-child=xterm \
+        --exit-with-children=no \
+        --html=on \
+        --daemon=no \
+        --xvfb="/usr/bin/Xvfb +extension Composite -screen 0 1920x1080x24+32 -nolisten tcp -noreset" \
+        --pulseaudio=no \
+        --notifications=no \
+        --bell=no \
+        :100
+
