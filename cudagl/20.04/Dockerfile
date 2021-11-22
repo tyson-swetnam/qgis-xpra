@@ -186,8 +186,8 @@ RUN mkdir -p /opt/grass78 \
         --with-zstd \
         --with-wxwidgets \
         --enable-64bit \
-        && make -j8 \
-        && make -j8 install \
+        && make -j4 \
+        && make -j4 install \
         && ldconfig
 
 # Configure and install GRASS GIS
@@ -229,6 +229,9 @@ WORKDIR /home/user/
 # set SHELL var to avoid /bin/sh fallback in interactive GRASS GIS sessions in docker
 ENV SHELL /bin/bash
 
+# VICE permissions error fix
+RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
+
 USER user
 
 ENV PATH=$PATH:$GISBASE/bin:$GISBASE/scripts
@@ -259,9 +262,6 @@ RUN grass78 -text -c EPSG:3857 /home/user/grassdata/PERMANENT
 
 # Removing Conda from PATH to fix Python SIP error with QGIS
 ENV PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/VirtualGL/bin/:/usr/local/go/bin:/usr/lib/grass78/bin:/usr/lib/grass78/scripts
-
-# VICE permissions error fix
-RUN sudo strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
 
 VOLUME /tmp/.X11-unix
 
