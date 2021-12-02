@@ -42,7 +42,7 @@ jobs:
           file: ubuntu/20.04/Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: harbor.cyverse.org/vice/xpra/desktop:geospatial-20.04 
+          tags: harbor.cyverse.org/vice/xpra/desktop:qgis-20.04 
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
           
@@ -54,7 +54,7 @@ jobs:
           file: cudagl/20.04/Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: harbor.cyverse.org/vice/xpra/cudagl:geospatial-20.04
+          tags: harbor.cyverse.org/vice/xpra/cudagl:qgis-20.04
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
      
