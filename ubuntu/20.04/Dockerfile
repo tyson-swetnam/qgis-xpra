@@ -158,11 +158,11 @@ ENV LC_ALL "en_US.UTF-8"
 ENV GRASS_SKIP_MAPSET_OWNER_CHECK 1
 
 # add GRASS source repository files to the image https://grasswiki.osgeo.org/wiki/Compile_and_Install_Ubuntu
-RUN mkdir -p /opt/grass78 \
-        && wget -nv --no-check-certificate https://grass.osgeo.org/grass78/source/grass-7.8.5.tar.gz \
-        && tar xzf grass-7.8.5.tar.gz -C /opt/grass78 --strip-components=1 \
-        && rm -rf grass-7.8.5.tar.gz \
-        && cd /opt/grass78 && ./configure \
+RUN mkdir -p /opt/grass82 \
+        && wget -nv --no-check-certificate https://grass.osgeo.org/grass82/source/grass-8.2.0.tar.gz \
+        && tar xzf grass-8.2.0.tar.gz -C /opt/grass82 --strip-components=1 \
+        && rm -rf grass-8.2.0.tar.gz \
+        && cd /opt/grass82 && ./configure \
         --enable-largefile \
         --with-bzlib \
         --with-cairo --with-cairo-ldflags=-lfontconfig \
@@ -192,12 +192,12 @@ RUN mkdir -p /opt/grass78 \
 
 # Configure and install GRASS GIS
 ENV GRASS_PYTHON=/usr/bin/python3
-ENV GISBASE "/usr/lib/grass78"
-ENV GRASSBIN "/usr/local/bin/grass78"
+ENV GISBASE "/usr/lib/grass82"
+ENV GRASSBIN "/usr/local/bin/grass82"
 ENV PYTHONPATH "${PYTHONPATH}:$GISBASE/etc/python/"
 ENV LD_LIBRARY_PATH "$LD_LIBRARY_PATH:$GISBASE/lib"
 ENV GIS_LOCK=$$
-ENV GISRC="/home/user/.grass78/rc"
+ENV GISRC="/home/user/.grass82/rc"
 
 # Unset environmental variables to avoid later compilation issues
 ENV INTEL ""
@@ -208,23 +208,23 @@ ENV LDFLAGS ""
 ENV CFLAGS ""
 ENV CXXFLAGS ""
 
-#RUN chmod u+s /usr/lib/libdlfaker.so
+RUN chmod u+s /usr/lib/libdlfaker.so
 
 # Install GRASS-GIS GUI 
 RUN apt-get update && apt-get install -y grass
 
-# grant access to /usr/share/qgis to user
-RUN chown -R user:user /usr/share/qgis
+# define username as ubuntu and limit its ownership
+ARG LOCAL_USER=ubuntu
+
+# grant access to /usr/share/qgis to ${LOCAL_USER}
+RUN chown -R ${LOCAL_USER}:${LOCAL_USER} /usr/share/qgis
 
 # set XDG_RUNTIME_DIR for qgis
-RUN mkdir /tmp/runtime-user && chown -R user:user /tmp/runtime-user
+RUN mkdir /tmp/runtime-user && chown -R ${LOCAL_USER}:${LOCAL_USER} /tmp/runtime-user
 ENV XDG_RUNTIME_USER /tmp/runtime-user
 
-# enable simple grass command regardless of version number
-RUN ln -s /usr/local/bin/grass* /usr/local/bin/grass
-
 # change to QGIS user profile to remove any root access
-WORKDIR /home/user/
+WORKDIR /home/${LOCAL_USER}/
 
 # set SHELL var to avoid /bin/sh fallback in interactive GRASS GIS sessions in docker
 ENV SHELL /bin/bash
@@ -232,36 +232,39 @@ ENV SHELL /bin/bash
 # VICE permissions error fix
 RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
 
-USER user
+# enable simple grass command regardless of version number
+#RUN ln -s /usr/local/bin/grass* /usr/local/bin/grass
+
+USER ubuntu
 
 ENV PATH=$PATH:$GISBASE/bin:$GISBASE/scripts
-ENV GISRC=/home/user/.grassrc7
+ENV GISRC=/home/ubuntu/.grassrc82
 
 # install external GRASS GIS session Python API
 RUN pip3 install grass-session
 
 # path to GRASS settings file
-ENV GISRC=/tmp/grass7-${USER}-$GIS_LOCK/gisrc
+ENV GISRC=/tmp/grass8-ubuntu-$GIS_LOCK/gisrc
 # remove any leftover files/folder
-RUN rm -fr /tmp/grass7-${USER}-$GIS_LOCK
-RUN mkdir /tmp/grass7-${USER}-$GIS_LOCK
-ENV TMPDIR="/tmp/grass7-${USER}-$GIS_LOCK"
+RUN rm -fr /tmp/grass8-ubuntu-$GIS_LOCK
+RUN mkdir /tmp/grass8-ubuntu-$GIS_LOCK
+ENV TMPDIR="/tmp/grass8-ubuntu-$GIS_LOCK"
 
 # set GISDBASE, LOCATION_NAME, and/or MAPSET
 
-RUN mkdir /home/user/grassdata
-RUN echo "GISDBASE: /home/user/" >>$GISRC
+RUN mkdir /home/ubuntu/grassdata
+RUN echo "GISDBASE: /home/ubuntu/" >>$GISRC
 RUN echo "LOCATION_NAME: grassdata" >>$GISRC
 RUN echo "MAPSET: PERMANENT" >>$GISRC
 # start in text mode
 RUN echo "GRASS_GUI: text" >>$GISRC
 
-# once everything is built, install a couple of GRASS extensions
-RUN grass78 -text -c EPSG:3857 /home/user/grassdata/PERMANENT
-#RUN echo "g.extension -s extension=r.sun.mp ; g.extension -s extension=r.sun.hourly ; g.extension -s extension=r.sun.daily" | grass78 -text /home/user/grassdata/PERMANENT
-
 # Removing Conda from PATH to fix Python SIP error with QGIS
-ENV PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/VirtualGL/bin/:/usr/local/go/bin:/usr/lib/grass78/bin:/usr/lib/grass78/scripts
+ENV PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/VirtualGL/bin/:/usr/local/go/bin:/usr/lib/grass82/bin:/usr/lib/grass82/scriptsß
+
+# once everything is built, install a couple of GRASS extensions
+#RUN grass --text -c EPSG:3857 /home/ubuntu/grassdata/PERMANENT
+#RUN echo "g.extension -s extension=r.sun.mp ; g.extension -s extension=r.sun.hourly ; g.extension -s extension=r.sun.daily" | grass82 --text /home/ubuntu/grassdata/PERMANENT
 
 VOLUME /tmp/.X11-unix
 
